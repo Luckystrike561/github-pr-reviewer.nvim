@@ -173,7 +173,7 @@ local function checkout_pr_files_from_merge_head(merge_base, callback)
     callback()
     return
   end
-  local diff_cmd = string.format("git diff --name-only --diff-filter=AM %s MERGE_HEAD", merge_base)
+  local diff_cmd = string.format("git -c core.quotePath=false diff --name-only --diff-filter=AM %s MERGE_HEAD", merge_base)
   vim.fn.jobstart(diff_cmd, {
     stdout_buffered = true,
     on_stdout = function(_, data)
@@ -281,7 +281,7 @@ end
 function M.get_modified_files_with_lines(callback)
   local merge_base = vim.g.pr_review_merge_base
   local base_ref = merge_base and merge_base or "HEAD"
-  local result = vim.fn.system("git diff --name-status " .. base_ref)
+  local result = vim.fn.system("git -c core.quotePath=false diff --name-status " .. base_ref)
   vim.schedule(function()
     debug_log(string.format("Debug: git diff output (first 200 chars): %s", result:sub(1, 200)))
   end)
@@ -303,7 +303,7 @@ function M.get_modified_files_with_lines(callback)
     debug_log(string.format("Debug: Found %d files", #files))
   end)
 
-  local untracked = vim.fn.system("git ls-files --others --exclude-standard")
+  local untracked = vim.fn.system("git -c core.quotePath=false ls-files --others --exclude-standard")
   if vim.v.shell_error == 0 then
     for path in untracked:gmatch("[^\r\n]+") do
       if path and path ~= "" then

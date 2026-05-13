@@ -291,7 +291,7 @@ local function collect_pr_files(callback)
   -- First get tracked changes (M, A, D)
   -- Compare with the base branch of the PR, not HEAD
   local base_branch = vim.g.pr_review_base_branch or "master"
-  local cmd = string.format("git diff --name-status origin/%s", base_branch)
+  local cmd = string.format("git -c core.quotePath=false diff --name-status origin/%s", base_branch)
   vim.fn.jobstart(cmd, {
     stdout_buffered = true,
     on_stdout = function(_, data)
@@ -317,7 +317,7 @@ local function collect_pr_files(callback)
       end
 
       -- Now get untracked files
-      local untracked_cmd = "git ls-files --others --exclude-standard"
+      local untracked_cmd = "git -c core.quotePath=false ls-files --others --exclude-standard"
       vim.fn.jobstart(untracked_cmd, {
         stdout_buffered = true,
         on_stdout = function(_, untracked_data)
