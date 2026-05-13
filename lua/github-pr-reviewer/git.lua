@@ -1,5 +1,11 @@
 local M = {}
 
+-- POSIX-safe path quoting that preserves UTF-8 bytes unlike vim.fn.shellescape()
+-- which escapes multi-byte characters as octal sequences that git can't parse.
+local function shell_escape_path(path)
+  return "'" .. path:gsub("'", "'\\''") .. "'"
+end
+
 -- Debug logging helper
 local function debug_log(msg)
   local pr_reviewer = require("github-pr-reviewer")
@@ -184,7 +190,7 @@ local function checkout_pr_files_from_merge_head(merge_base, callback)
           callback()
           return
         end
-        local files_str = table.concat(vim.tbl_map(vim.fn.shellescape, pr_files), " ")
+        local files_str = table.concat(vim.tbl_map(shell_escape_path, pr_files), " ")
         vim.fn.jobstart("git checkout MERGE_HEAD -- " .. files_str, {
           on_exit = function()
             vim.schedule(callback)
@@ -314,7 +320,7 @@ function M.get_modified_files_with_lines(callback)
   local pending = #files
   for i, file in ipairs(files) do
     if file.status ~= "D" and file.status ~= "?" then
-      local diff_cmd = string.format("git diff --unified=0 %s -- %s", base_ref, vim.fn.shellescape(file.path))
+      local diff_cmd = string.format("git diff --unified=0 %s -- %s", base_ref, shell_escape_path(file.path))
       vim.fn.jobstart(diff_cmd, {
         stdout_buffered = true,
         on_stdout = function(_, data)
@@ -388,9 +394,9 @@ function M.cleanup_review(review_branch, target_branch, callback)
 
   for _, file in ipairs(files) do
     if file.status == "A" or file.status == "?" then
-      table.insert(new_paths, vim.fn.shellescape(file.path))
+      table.insert(new_paths, shell_escape_path(file.path))
     else
-      table.insert(modified_paths, vim.fn.shellescape(file.path))
+      table.insert(modified_paths, shell_escape_path(file.path))
     end
   end
 
